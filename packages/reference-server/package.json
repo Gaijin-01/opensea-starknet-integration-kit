@@ -1,0 +1,24 @@
+{
+  "name": "@storm/reference-server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --watch dist/server.js",
+    "start": "node dist/server.js",
+    "clean": "rm -rf dist .tsbuildinfo"
+  },
+  "dependencies": {
+    "@storm/core": "*",
+    "@storm/indexer": "*",
+    "@storm/venue-core": "*",
+    "@storm/venue-medialane": "*",
+    "@storm/venue-ark": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "types": "./dist/server.d.ts"
+}

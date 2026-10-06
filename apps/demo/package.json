@@ -1,0 +1,15 @@
+{
+  "name": "@storm/demo",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No TypeScript sources to compile'",
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@storm/core": "file:../packages/core",
+    "@storm/wallet": "file:../packages/wallet",
+    "@storm/venue-core": "file:../packages/venue-core"
+  }
+}

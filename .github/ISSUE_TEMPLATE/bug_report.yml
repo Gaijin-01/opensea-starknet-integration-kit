@@ -1,0 +1,87 @@
+name: Bug Report
+description: Report a bug in the OpenSea × Starknet Integration Kit
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      text: |
+        ## Bug Report
+
+        Thank you for reporting a bug. Please search existing issues first.
+
+        **This project is an unofficial open-source reference implementation. It is not affiliated with or endorsed by OpenSea.**
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Python package (starknet/)
+        - "@storm/core"
+        - "@storm/wallet"
+        - "@storm/indexer"
+        - "@storm/venue-core"
+        - "@storm/venue-ark"
+        - "@storm/venue-medialane"
+        - "@storm/opensea-adapter"
+        - "@storm/reference-server"
+        - "@storm/auth"
+        - Demo app
+        - Documentation
+        - CI / build
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options:
+        - Starknet Sepolia (testnet)
+        - Starknet Mainnet
+        - Devnet
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: Clear description of the bug
+      placeholder: |
+        What happened:
+        Expected behavior:
+        Actual behavior:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the bug
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node.js/Python versions, package versions
+      placeholder: |
+        - OS:
+        - Node.js version:
+        - Python version:
+        - Package version/commit:
+        - RPC endpoint:
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Include any error messages, stack traces, or relevant output

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Starknet NFT Integration Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #0a0a0a; color: #e0e0e0; }
+    h1 { color: #fff; border-bottom: 1px solid #333; padding-bottom: 12px; }
+    h2 { color: #a0d0ff; margin-top: 24px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    section { background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    button { padding: 10px 20px; font-size: 14px; cursor: pointer; background: #1e3a5f; color: #a0d0ff; border: 1px solid #2a5a8f; border-radius: 4px; }
+    button:hover { background: #2a4a7f; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .card { border: 1px solid #2a2a2a; border-radius: 6px; padding: 14px; margin: 8px 0; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+    .card:hover { border-color: #3a3a3a; }
+    .card-title { font-weight: 600; color: #fff; }
+    .card-meta { color: #888; font-size: 0.85em; margin-top: 4px; }
+    .address { font-family: monospace; font-size: 12px; color: #7ab8ff; background: #0a1520; padding: 2px 6px; border-radius: 3px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .badge-erc721 { background: #1a2a1a; color: #6f6; }
+    .badge-erc1155 { background: #2a1a2a; color: #f6f; }
+    #wallet-info { margin-top: 12px; padding: 12px; background: #0a1520; border-radius: 4px; font-size: 0.9em; }
+    #output { background: #0a0a0a; padding: 16px; border-radius: 4px; white-space: pre-wrap; min-height: 120px; max-height: 300px; overflow-y: auto; border: 1px solid #2a2a2a; font-family: 'Courier New', monospace; font-size: 12px; color: #8f8; }
+    #output .err { color: #f66; }
+    #output .info { color: #88c; }
+    input { background: #1a1a1a; color: #e0e0e0; border: 1px solid #2a2a2a; border-radius: 4px; padding: 8px 12px; font-size: 14px; width: 100%; margin: 6px 0; }
+    select { background: #1a1a1a; color: #e0e0e0; border: 1px solid #2a2a2a; border-radius: 4px; padding: 8px 12px; font-size: 14px; }
+    .venue-controls { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #2a5a8f; border-top-color: #a0d0ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>⚡ Starknet NFT Integration Kit — Demo</h1>
+
+  <!-- ── WALLET ─────────────────────────────────────── -->
+  <section id="wallet-section">
+    <h2>1. Browser Wallet</h2>
+    <button id="connect-btn">Connect Starknet Wallet</button>
+    <div id="wallet-info" class="hidden">
+      <div><span class="badge badge-erc721">Connected</span></div>
+      <div style="margin-top:8px">
+        Address: <span id="account-addr" class="address">—</span>
+      </div>
+      <div style="margin-top:4px">
+        Network: <span id="chain-id" style="color:#a0d0ff">—</span>
+      </div>
+      <div style="margin-top:4px">
+        <button id="disconnect-btn" style="padding:4px 12px;font-size:12px">Disconnect</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NFTs ───────────────────────────────────────── -->
+  <section id="nfts-section" class="hidden">
+    <h2>2. My NFTs <span id="nft-count"></span></h2>
+    <div id="nft-list">Loading… <span class="spinner"></span></div>
+  </section>
+
+  <!-- ── SELECTED ASSET ──────────────────────────────── -->
+  <section id="asset-section" class="hidden">
+    <h2>3. Asset Detail</h2>
+    <div id="asset-detail"></div>
+
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid #2a2a2a">
+      <h2 style="margin-top:0">4. List on Venue</h2>
+      <div class="venue-controls">
+        <select id="venue-select">
+          <option value="medialane">Medialane</option>
+          <option value="ark">Ark Project</option>
+        </select>
+        <input type="text" id="price-input" placeholder="Price (wei, e.g. 1000000000000000000)">
+        <button id="list-btn">List NFT</button>
+      </div>
+      <div id="listing-result" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- ── OUTPUT ─────────────────────────────────────── -->
+  <section>
+    <h2>Console Output</h2>
+    <div id="output"></div>
+  </section>
+
+  <!-- ── DEMO NOTE ──────────────────────────────────── -->
+  <section style="border-color:#3a2a1a">
+    <p style="color:#c8a060; font-size:0.9em; margin:0">
+      <strong>Note:</strong> This demo uses live Starknet packages via the npm workspace.
+      Wallet connect requires the <code> Argent X</code>, <code>Braavos</code>, or <code>Cartridge</code>
+      browser extension. The Medialane path requires <code>MEDIALANE_API_KEY</code> set server-side
+      (never exposed to browser). Ark uses on-chain settlement directly.
+    </p>
+  </section>
+
+  <script type="module">
+    // ── Demo logger ────────────────────────────────────────────────────────
+    const output = document.getElementById('output');
+    const log = (msg, type = 'log') => {
+      const ts = new Date().toISOString().slice(11, 19);
+      const line = document.createElement('div');
+      line.className = type === 'err' ? 'err' : type === 'info' ? 'info' : '';
+      line.textContent = `${ts} ${msg}`;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    };
+    log('Demo loaded. Connect wallet to begin.', 'info');
+
+    // ── Wallet connect (uses @storm/wallet package) ────────────────────────
+    let walletState = null;
+
+    document.getElementById('connect-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('connect-btn');
+      btn.disabled = true;
+      btn.textContent = 'Connecting…';
+      log('Initiating wallet connection via @storm/wallet…');
+
+      try {
+        // Dynamic import via demo server proxy: /packages/<pkg>/dist/index.js
+        // The demo server maps /packages/wallet → packages/wallet/dist/index.js
+        const { connectWallet } = await import('/packages/wallet/dist/index.js')
+          .catch(() => ({ connectWallet: null }));
+
+        if (!connectWallet) {
+          throw new Error('@storm/wallet not available. Run `npm run build` from repo root.');
+        }
+
+        walletState = await connectWallet();
+        // @storm/wallet returns { account: { address }, chainId, ... }
+        const address = walletState.account.address;
+        log(`Connected: ${address}`);
+        log(`Chain ID: ${walletState.chainId}`, 'info');
+
+        // Update UI
+        document.getElementById('account-addr').textContent = address;
+        document.getElementById('chain-id').textContent = walletState.chainId;
+        document.getElementById('wallet-info').classList.remove('hidden');
+        document.getElementById('nfts-section').classList.remove('hidden');
+        btn.textContent = '✓ Connected';
+        btn.disabled = false;
+
+        await loadNfts(address);
+      } catch (err) {
+        log(`Connect failed: ${err.message}`, 'err');
+        btn.disabled = false;
+        btn.textContent = 'Connect Starknet Wallet';
+        log('Ensure you have Argent X / Braavos / Cartridge installed.', 'info');
+      }
+    });
+
+    document.getElementById('disconnect-btn').addEventListener('click', () => {
+      walletState = null;
+      document.getElementById('wallet-info').classList.add('hidden');
+      document.getElementById('nfts-section').classList.add('hidden');
+      document.getElementById('asset-section').classList.add('hidden');
+      log('Disconnected.', 'info');
+    });
+
+    // ── NFT loading (mocked for demo — use @storm/indexer in production) ──
+    async function loadNfts(address) {
+      const list = document.getElementById('nft-list');
+      const section = document.getElementById('nfts-section');
+
+      try {
+        // Attempt to use @storm/indexer for real on-chain NFT loading
+        let nfts = [];
+        try {
+          // /packages/indexer/dist/index.js is served by the demo server from repo root
+          const { StarknetIndexer } = await import('/packages/indexer/dist/index.js')
+            .catch(() => ({ StarknetIndexer: null }));
+          if (StarknetIndexer) {
+            const indexer = new StarknetIndexer({
+              rpcUrl: 'https://starknet-sepolia.infura.io/v3/demo',
+              network: 'sepolia',
+            });
+            log('Indexer initialised — querying on-chain events…', 'info');
+            // In production: await indexer.sync();
+            // nfts = await indexer.getAssetsByOwner(address);
+          }
+        } catch { /* indexer not available in this env */ }
+
+        if (nfts.length === 0) {
+          // Demo fixture NFTs when no real indexer data
+          nfts = [
+            { contractAddress: '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7', tokenId: '1', standard: 'ERC721', name: 'Demo NFT #1', image: '' },
+            { contractAddress: '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7', tokenId: '2', standard: 'ERC721', name: 'Demo NFT #2', image: '' },
+          ];
+          log('Using demo fixture NFTs (real indexer requires a funded RPC + event sync).', 'info');
+        }
+
+        document.getElementById('nft-count').textContent = `(${nfts.length})`;
+        list.innerHTML = '';
+        nfts.forEach((nft, i) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.cursor = 'pointer';
+          card.innerHTML = `
+            <div>
+              <div class="card-title">${nft.name || `Token #${nft.tokenId}`}</div>
+              <div class="card-meta">
+                <span class="badge badge-${nft.standard.toLowerCase()}">${nft.standard}</span>
+                ${nft.contractAddress.slice(0, 10)}…${nft.contractAddress.slice(-6)}
+                ID: ${nft.tokenId}
+              </div>
+            </div>
+            <div style="color:#a0d0ff">›</div>
+          `;
+          card.addEventListener('click', () => selectAsset(nft));
+          list.appendChild(card);
+        });
+      } catch (err) {
+        list.innerHTML = `<div style="color:#f66">Failed: ${err.message}</div>`;
+        log(`NFT load error: ${err.message}`, 'err');
+      }
+    }
+
+    // ── Asset selection ───────────────────────────────────────────────────
+    let selectedAsset = null;
+
+    function selectAsset(asset) {
+      selectedAsset = asset;
+      document.getElementById('asset-section').classList.remove('hidden');
+      document.getElementById('asset-detail').innerHTML = `
+        <div class="card">
+          <div>
+            <div class="card-title">${asset.name || `Token #${asset.tokenId}`}</div>
+            <div class="card-meta">
+              <span class="badge badge-${asset.standard.toLowerCase()}">${asset.standard}</span>
+              Contract: <span class="address">${asset.contractAddress}</span>
+            </div>
+            <div class="card-meta">Token ID: <strong>${asset.tokenId}</strong></div>
+          </div>
+        </div>
+      `;
+      document.getElementById('listing-result').innerHTML = '';
+      log(`Selected: ${asset.contractAddress}::${asset.tokenId}`, 'info');
+    }
+
+    // ── Listing (uses @storm/venue-core + venue adapters) ─────────────────
+    document.getElementById('list-btn').addEventListener('click', async () => {
+      if (!selectedAsset) { log('No asset selected.', 'err'); return; }
+      if (!walletState) { log('Wallet not connected.', 'err'); return; }
+
+      const price = document.getElementById('price-input').value.trim();
+      const venue = document.getElementById('venue-select').value;
+      const resultDiv = document.getElementById('listing-result');
+      const btn = document.getElementById('list-btn');
+
+      if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+        log('Invalid price.', 'err');
+        return;
+      }
+
+      btn.disabled = true;
+      resultDiv.innerHTML = `<span class="spinner"></span> Submitting listing…`;
+      log(`Creating ${venue} listing for ${price} wei…`);
+
+      try {
+        const ethAddr = '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7';
+        // Load venue adapters via demo server proxy at /packages/<pkg>/dist/index.js
+        const { MedialaneAdapter } = await import('/packages/venue-medialane/dist/index.js')
+          .catch(() => ({ MedialaneAdapter: null }));
+        const { ArkAdapter } = await import('/packages/venue-ark/dist/index.js')
+          .catch(() => ({ ArkAdapter: null }));
+
+        const request = {
+          asset: { contractAddress: selectedAsset.contractAddress, tokenId: selectedAsset.tokenId, standard: selectedAsset.standard },
+          price: { amount: price, currency: ethAddr, decimals: 18 },
+          maker: walletState.account.address,
+        };
+
+        if (venue === 'medialane' && MedialaneAdapter) {
+          // Medialane API key must stay server-side — submit via demo server proxy.
+          // The server routes /api/medialane/* → api.medialane.io/* with the key attached.
+          const res = await fetch('/api/medialane/create-listing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nftContract: selectedAsset.contractAddress,
+              tokenId: selectedAsset.tokenId,
+              price,
+              currency: ethAddr,
+              maker: walletState.account.address,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `Medialane error ${res.status}`);
+          resultDiv.innerHTML = data.transactionHash
+            ? `<div style="color:#6f">Listing submitted: <span class="address">${data.transactionHash}</span></div>`
+            : `<div style="color:#f90">Listing created (pending confirmation)</div>`;
+          log(`Medialane: ${JSON.stringify(data)}`);
+        } else if (venue === 'ark' && ArkAdapter) {
+          const adapter = new ArkAdapter({ network: 'sepolia' });
+          const result = await adapter.createListing(request, walletState.account);
+          resultDiv.innerHTML = result.transactionHash
+            ? `<div style="color:#6f">Listing submitted: <span class="address">${result.transactionHash}</span></div>`
+            : `<div style="color:#f90">Listing created (pending confirmation)</div>`;
+          log(`Ark listing: ${JSON.stringify(result)}`);
+        } else {
+          log(`Venue "${venue}" adapter not available in this build. See packages/venue-${venue}.`, 'err');
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div style="color:#f66">Error: ${err.message}</div>`;
+        log(`Listing error: ${err.message}`, 'err');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

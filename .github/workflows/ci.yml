@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build foundation packages (no @storm/* deps)
+        run: npm run build --workspace=@storm/core --workspace=@storm/venue-core --workspace=@storm/wallet
+
+      - name: Build remaining packages
+        run: npm run build --workspace=@storm/auth --workspace=@storm/indexer --workspace=@storm/venue-medialane --workspace=@storm/venue-ark --workspace=@storm/opensea-adapter --workspace=@storm/reference-server
+
+      - name: Typecheck all packages
+        run: npm run typecheck
+
+      - name: Run Python tests
+        run: |
+          python3 -m pip install pytest pytest-asyncio --quiet
+          python3 -m pytest starknet/tests/ -q --tb=short
+
+  reference-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build foundation packages
+        run: npm run build --workspace=@storm/core --workspace=@storm/venue-core --workspace=@storm/wallet --workspace=@storm/indexer --workspace=@storm/venue-medialane --workspace=@storm/venue-ark
+      - name: Build reference-server
+        run: npm run build --workspace=@storm/reference-server
+      - name: Start reference server
+        run: node packages/reference-server/dist/server.js &
+      - name: Health check
+        run: sleep 2 && curl -f http://localhost:3001/health
+
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build demo dependencies
+        run: npm run build --workspace=@storm/core --workspace=@storm/wallet --workspace=@storm/venue-core
+      - name: Start demo server
+        run: node apps/demo/server.js &
+      - name: Health check
+        run: sleep 3 && curl -f http://localhost:3000/health

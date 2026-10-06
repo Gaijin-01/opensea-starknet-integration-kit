@@ -1,0 +1,56 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      text: |
+        ## Feature Request
+
+        **This project is an unofficial open-source reference implementation. It is not affiliated with or endorsed by OpenSea.**
+
+        Please search existing issues before submitting.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - New venue adapter
+        - New feature (existing package)
+        - Performance improvement
+        - Documentation improvement
+        - Developer experience
+        - Security hardening
+        - Test coverage
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or limitation
+      description: What problem does this solve or what limitation does it address?
+      placeholder: |
+        Currently, the kit cannot...
+        It would be useful to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this to work?
+      placeholder: |
+        Add a new function/interface/class...
+        Modify existing...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative approaches you considered?
